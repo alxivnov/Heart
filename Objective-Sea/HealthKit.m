@@ -121,10 +121,10 @@ __static(HKHealthStore *, defaultStore, [[HKHealthStore alloc] init])
 }
 
 - (HKSampleQuery *)querySamplesWithIdentifier:(NSString *)identifier
-								 predicate:(NSPredicate *)predicate
-									 limit:(NSUInteger)limit
-									  sort:(NSDictionary<NSString *, NSNumber *> *)sort
-							resultsHandler:(void (^)(NSArray<__kindof HKSample *> *, NSError *))resultsHandler {
+                                    predicate:(NSPredicate *)predicate
+                                        limit:(NSUInteger)limit
+                                         sort:(NSDictionary<NSString *, NSNumber *> *)sort
+                               resultsHandler:(void (^)(NSArray<__kindof HKSample *> *, NSError *))resultsHandler {
 
 	id type = [HKObjectType typeForIdentifier:identifier];
 
@@ -176,6 +176,38 @@ __static(HKHealthStore *, defaultStore, [[HKHealthStore alloc] init])
 				completionHandler();
 		}];
 	}];
+}
+
+- (BOOL)deleteObject:(HKObject *)object
+          completion:(void(^)(BOOL success))completion {
+    
+    if (!object)
+        return NO;
+    
+    [self deleteObject:object withCompletion:^(BOOL success, NSError *error) {
+        [error log:@"deleteObject:"];
+
+        if (completion)
+            completion(success);
+    }];
+
+    return YES;
+}
+
+- (BOOL)deleteObjects:(NSArray<HKObject *> *)objects
+           completion:(void (^)(BOOL))completion {
+    
+    if (!objects.count)
+        return NO;
+
+    [self deleteObjects:objects withCompletion:^(BOOL success, NSError *error) {
+        [error log:@"deleteObjects:"];
+
+        if (completion)
+            completion(success);
+    }];
+
+    return YES;
 }
 
 @end

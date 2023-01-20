@@ -48,6 +48,7 @@
 		FA7207D426C92B3F003FC516 /* Foundation.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = Foundation.m; sourceTree = "<group>"; };
 		FA7207D726C9A75E003FC516 /* Accelerate.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = Accelerate.h; sourceTree = "<group>"; };
 		FA7207D826C9A75E003FC516 /* Accelerate.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = Accelerate.m; sourceTree = "<group>"; };
+		FACB3E532979C1E7008B1C1C /* .gitignore */ = {isa = PBXFileReference; lastKnownFileType = text; path = .gitignore; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -65,6 +66,7 @@
 		FA0A427F26BC5D8900412792 = {
 			isa = PBXGroup;
 			children = (
+				FACB3E532979C1E7008B1C1C /* .gitignore */,
 				FA0A42A426BC614100412792 /* README.md */,
 				FA0A428A26BC5D8900412792 /* Heart */,
 				FA7207D626C99712003FC516 /* Objective-Sea */,
@@ -348,7 +350,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = Heart/Heart.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1.8.16;
+				CURRENT_PROJECT_VERSION = 3.1.19;
 				DEVELOPMENT_TEAM = VRBB8HL9RV;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = Heart/Info.plist;
@@ -362,7 +364,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 0.1;
+				MARKETING_VERSION = 0.1.1;
 				PRODUCT_BUNDLE_IDENTIFIER = com.alxivnov.heart;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
@@ -377,7 +379,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = Heart/Heart.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1.8.16;
+				CURRENT_PROJECT_VERSION = 3.1.19;
 				DEVELOPMENT_TEAM = VRBB8HL9RV;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = Heart/Info.plist;
@@ -391,7 +393,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 0.1;
+				MARKETING_VERSION = 0.1.1;
 				PRODUCT_BUNDLE_IDENTIFIER = com.alxivnov.heart;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;

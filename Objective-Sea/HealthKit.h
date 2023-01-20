@@ -56,5 +56,10 @@
 											 sort:(NSDictionary<NSString *, NSNumber *> *)sort
 								   resultsHandler:(void (^)(NSArray<__kindof HKSample *> *, NSError *))resultsHandler;
 
+- (BOOL)deleteObject:(HKObject *)object
+          completion:(void (^)(BOOL success))completion;
+- (BOOL)deleteObjects:(NSArray<HKObject *> *)objects
+           completion:(void (^)(BOOL success))completion;
+
 @end
 

@@ -99,6 +99,17 @@ __lazy(NSMutableDictionary *, rmssd, [[NSMutableDictionary alloc] init])
 	[tableView deselectRowAtIndexPath:indexPath animated:YES];
 }
 
+- (void)tableView:(UITableView *)tableView commitEditingStyle:(UITableViewCellEditingStyle)editingStyle forRowAtIndexPath:(NSIndexPath *)indexPath {
+    if (editingStyle == UITableViewCellEditingStyleDelete) {
+        HKHeartbeatSeriesSample *sample = self.rows[self.sections[indexPath.section]][indexPath.row];
+        
+        [[HKHealthStore defaultStore] deleteObject:sample completion:^(BOOL success) {
+            if (success)
+                __ui([tableView deleteRowsAtIndexPaths:@[ indexPath ] withRowAnimation:UITableViewRowAnimationAutomatic]);
+        }];
+    }
+}
+
 /*
 // Override to support conditional editing of the table view.
 - (BOOL)tableView:(UITableView *)tableView canEditRowAtIndexPath:(NSIndexPath *)indexPath {
