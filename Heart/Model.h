@@ -16,6 +16,6 @@
 
 + (instancetype)instance;
 
-- (void)observe:(void (^)(NSArray<__kindof HKSample *> *samples))callback;
+- (void)observe:(void (^)(NSDictionary<NSString *, NSArray<__kindof HKSample *> *> *results))callback;
 
 @end

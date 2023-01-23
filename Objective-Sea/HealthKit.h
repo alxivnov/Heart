@@ -41,20 +41,31 @@
 							   readIdentifiers:(NSArray<NSString *> *)typesToRead completion:(void (^)(BOOL, NSError *))completion;
 
 - (HKSampleQuery *)querySamplesWithIdentifier:(NSString *)identifier
-									predicate:(NSPredicate *)predicate
-										limit:(NSUInteger)limit
-										 sort:(NSDictionary<NSString *, NSNumber *> *)sort
-							   resultsHandler:(void(^)(NSArray<__kindof HKSample *> *results, NSError *error))resultsHandler;
+                                    predicate:(NSPredicate *)predicate
+                                        limit:(NSUInteger)limit
+                                         sort:(NSDictionary<NSString *, NSNumber *> *)sort
+                               resultsHandler:(void(^)(NSArray<__kindof HKSample *> *results, NSError *error))resultsHandler;
+
+- (HKSampleQuery *)querySamplesWithDescriptors:(NSArray<HKQueryDescriptor *> *)descriptors
+                                         limit:(NSUInteger)limit
+                                          sort:(NSDictionary<NSString *, NSNumber *> *)sort
+                                resultsHandler:(void(^)(NSArray<__kindof HKSample *> *results, NSError *error))resultsHandler;
 
 - (HKObserverQuery *)observeSamplesWithIdentifier:(NSString *)identifier
-										predicate:(NSPredicate *)predicate
-									updateHandler:(void(^)(HKObserverQueryCompletionHandler completionHandler, NSError * error))updateHandler;
-
+                                        predicate:(NSPredicate *)predicate
+                                    updateHandler:(void(^)(HKObserverQueryCompletionHandler completionHandler, NSError * error))updateHandler;
 - (HKObserverQuery *)observeSamplesWithIdentifier:(NSString *)identifier
-										predicate:(NSPredicate *)predicate
-											limit:(NSUInteger)limit
-											 sort:(NSDictionary<NSString *, NSNumber *> *)sort
-								   resultsHandler:(void (^)(NSArray<__kindof HKSample *> *, NSError *))resultsHandler;
+                                        predicate:(NSPredicate *)predicate
+                                            limit:(NSUInteger)limit
+                                             sort:(NSDictionary<NSString *, NSNumber *> *)sort
+                                   resultsHandler:(void (^)(NSArray<__kindof HKSample *> *results, NSError *error))resultsHandler;
+
+- (HKObserverQuery *)observeSamplesWithIdentifiersAndPpredicates:(NSDictionary<NSString *, NSPredicate *> *)identifiersAndPredicates
+                                                   updateHandler:(void(^)(NSArray<HKSampleType *> *sampleTypesAdded, HKObserverQueryCompletionHandler completionHandler, NSError *error))updateHandler;
+- (HKObserverQuery *)observeSamplesWithIdentifiersAndPpredicates:(NSDictionary<NSString *, NSPredicate *> *)identifiersAndPredicates
+                                                           limit:(NSUInteger)limit
+                                                            sort:(NSDictionary<NSString *, NSNumber *> *)sort
+                                                  resultsHandler:(void (^)(NSDictionary<NSString *, NSArray<__kindof HKSample *> *> *results, NSError *error))resultsHandler;
 
 - (BOOL)deleteObject:(HKObject *)object
           completion:(void (^)(BOOL success))completion;

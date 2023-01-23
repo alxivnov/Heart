@@ -126,22 +126,43 @@ __static(HKHealthStore *, defaultStore, [[HKHealthStore alloc] init])
                                          sort:(NSDictionary<NSString *, NSNumber *> *)sort
                                resultsHandler:(void (^)(NSArray<__kindof HKSample *> *, NSError *))resultsHandler {
 
-	id type = [HKObjectType typeForIdentifier:identifier];
+    id type = [HKObjectType typeForIdentifier:identifier];
 
-	NSArray<NSSortDescriptor *> *sortDescriptors = [sort.allKeys map:^id(NSString *key) {
-		return [NSSortDescriptor sortDescriptorWithKey:key ascending:sort[key].boolValue];
-	}];
+    NSArray<NSSortDescriptor *> *sortDescriptors = [sort.allKeys map:^id(NSString *key) {
+        return [NSSortDescriptor sortDescriptorWithKey:key ascending:sort[key].boolValue];
+    }];
 
-	HKSampleQuery *query = [[HKSampleQuery alloc] initWithSampleType:type predicate:predicate limit:limit sortDescriptors:sortDescriptors resultsHandler:^(HKSampleQuery * _Nonnull query, NSArray<__kindof HKSample *> * _Nullable results, NSError * _Nullable error) {
-		[error log:@"HKSampleQuery"];
+    HKSampleQuery *query = [[HKSampleQuery alloc] initWithSampleType:type predicate:predicate limit:limit sortDescriptors:sortDescriptors resultsHandler:^(HKSampleQuery * _Nonnull query, NSArray<__kindof HKSample *> * _Nullable results, NSError * _Nullable error) {
+        [error log:@"HKSampleQuery"];
 
-		if (resultsHandler)
-			resultsHandler(results, error);
+        if (resultsHandler)
+            resultsHandler(results, error);
 
-	}];
-	[self executeQuery:query];
+    }];
+    [self executeQuery:query];
 
-	return query;
+    return query;
+}
+
+- (HKSampleQuery *)querySamplesWithDescriptors:(NSArray<HKQueryDescriptor *> *)descriptors
+                                         limit:(NSUInteger)limit
+                                          sort:(NSDictionary<NSString *, NSNumber *> *)sort
+                                resultsHandler:(void (^)(NSArray<__kindof HKSample *> *, NSError *))resultsHandler {
+
+    NSArray<NSSortDescriptor *> *sortDescriptors = [sort.allKeys map:^id(NSString *key) {
+        return [NSSortDescriptor sortDescriptorWithKey:key ascending:sort[key].boolValue];
+    }];
+
+    HKSampleQuery *query = [[HKSampleQuery alloc] initWithQueryDescriptors:descriptors limit:limit sortDescriptors:sortDescriptors resultsHandler:^(HKSampleQuery * _Nonnull query, NSArray<__kindof HKSample *> * _Nullable results, NSError * _Nullable error) {
+        [error log:@"HKSampleQuery"];
+
+        if (resultsHandler)
+            resultsHandler(results, error);
+
+    }];
+    [self executeQuery:query];
+
+    return query;
 }
 
 - (HKObserverQuery *)observeSamplesWithIdentifier:(NSString *)identifier
@@ -176,6 +197,57 @@ __static(HKHealthStore *, defaultStore, [[HKHealthStore alloc] init])
 				completionHandler();
 		}];
 	}];
+}
+
+- (HKObserverQuery *)observeSamplesWithIdentifiersAndPpredicates:(NSDictionary<NSString *,NSPredicate *> *)identifiersAndPredicates
+                                                   updateHandler:(void (^)(NSArray<HKSampleType *> *, HKObserverQueryCompletionHandler, NSError *))updateHandler {
+    
+    NSArray<HKQueryDescriptor *> *descriptors = [identifiersAndPredicates.allKeys map:^id(NSString *identifier) {
+        HKSampleType *type = [HKObjectType typeForIdentifier:identifier];
+        
+        return [[HKQueryDescriptor alloc] initWithSampleType:type predicate:[identifiersAndPredicates objectForKey:identifier]];
+    }];
+
+    HKObserverQuery *query = [[HKObserverQuery alloc] initWithQueryDescriptors:descriptors updateHandler:^(HKObserverQuery * _Nonnull query, NSSet<HKSampleType *> * _Nullable sampleTypesAdded, HKObserverQueryCompletionHandler  _Nonnull completionHandler, NSError * _Nullable error) {
+        [error log:@"HKObserverQuery"];
+
+        if (updateHandler)
+            updateHandler([sampleTypesAdded allObjects], completionHandler, error);
+    }];
+    [self executeQuery:query];
+    
+    return query;
+}
+
+-(HKObserverQuery *)observeSamplesWithIdentifiersAndPpredicates:(NSDictionary<NSString *,NSPredicate *> *)identifiersAndPredicates
+                                                          limit:(NSUInteger)limit
+                                                           sort:(NSDictionary<NSString *,NSNumber *> *)sort
+                                                 resultsHandler:(void (^)(NSDictionary<NSString *,NSArray<__kindof HKSample *> *> *, NSError *))resultsHandler {
+    
+    return [self observeSamplesWithIdentifiersAndPpredicates:identifiersAndPredicates updateHandler:^(NSArray<HKSampleType *> *sampleTypesAdded, HKObserverQueryCompletionHandler completionHandler, NSError *error) {
+        NSArray<HKQueryDescriptor *> *descriptors = [sampleTypesAdded map:^id(HKSampleType *type) {
+            return [[HKQueryDescriptor alloc] initWithSampleType:type predicate:[identifiersAndPredicates objectForKey:type.identifier]];
+        }];
+        
+        [self querySamplesWithDescriptors:descriptors limit:limit sort:sort resultsHandler:^(NSArray<__kindof HKSample *> *results, NSError *error) {
+			// REFACTOR: group
+            NSDictionary *groupedResults = [results forEach:^id(__kindof HKSample *sample, NSUInteger index, NSMutableDictionary *context) {
+                NSMutableArray *samples = [context objectForKey:sample.sampleType.identifier];
+                if (samples)
+                    [samples addObject:sample];
+                else
+                    [context setObject:[[NSMutableArray alloc] initWithObjects:sample, Nil] forKey:sample.sampleType.identifier];
+                
+                return context;
+            } context:[[NSMutableDictionary alloc] initWithCapacity:sampleTypesAdded.count]];
+            
+            if (resultsHandler)
+                resultsHandler(groupedResults, error);
+
+            if (completionHandler)
+                completionHandler();
+        }];
+    }];
 }
 
 - (BOOL)deleteObject:(HKObject *)object

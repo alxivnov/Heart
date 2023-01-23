@@ -15,6 +15,8 @@
 
 @property (strong, nonatomic, readonly) NSDateIntervalFormatter *formatter;
 
+@property (strong, nonatomic, readonly) NSMutableDictionary<NSString *, NSArray *> *cache;
+@property (strong, nonatomic, readonly) NSMutableDictionary<NSString *, UIColor *> *color;
 @property (strong, nonatomic, readonly) NSMutableDictionary<NSString *, NSNumber *> *rmssd;
 @end
 
@@ -27,6 +29,8 @@ __lazy(NSDateIntervalFormatter *, formatter,
 	formatter
 )
 
+__lazy(NSMutableDictionary *, cache, [[NSMutableDictionary alloc] init])
+__lazy(NSMutableDictionary *, color, [[NSMutableDictionary alloc] init])
 __lazy(NSMutableDictionary *, rmssd, [[NSMutableDictionary alloc] init])
 
 - (void)viewDidLoad {
@@ -38,19 +42,54 @@ __lazy(NSMutableDictionary *, rmssd, [[NSMutableDictionary alloc] init])
     // Uncomment the following line to display an Edit button in the navigation bar for this view controller.
     // self.navigationItem.rightBarButtonItem = self.editButtonItem;
 
-	[MODEL observe:^(NSArray<__kindof HKSample *> *samples) {
-		self.rows = [samples forEach:^id(__kindof HKSample *value, NSUInteger index, NSMutableDictionary *context) {
-			NSDate *key = [value.endDate dateComponent];
+	[MODEL observe:^(NSDictionary<NSString *,NSArray<__kindof HKSample *> *> *results) {
+        for (NSString *identifier in results.allKeys) {
+			NSArray *samples = [results objectForKey:identifier];
+			if (!samples)
+				continue;
 
-			NSMutableArray *arr = context[key];
-			if (arr)
-				[arr addObject:value];
-			else
-				context[key] = [[NSMutableArray alloc] initWithObjects:value, Nil];
+			[self.cache setObject:samples forKey:identifier];
 
-			return context;
-		} context:[[NSMutableDictionary alloc] initWithCapacity:samples.count]];
-		self.sections = [self.rows.allKeys sortedArray:NO];
+			if (identifier != HKDataTypeIdentifierHeartbeatSeries)
+				continue;
+
+			// REFACTOR: group
+			self.rows = [samples forEach:^id(__kindof HKSample *value, NSUInteger index, NSMutableDictionary *context) {
+				NSDate *key = [value.endDate dateComponent];
+
+				NSMutableArray *arr = context[key];
+				if (arr)
+					[arr addObject:value];
+				else
+					context[key] = [[NSMutableArray alloc] initWithObjects:value, Nil];
+
+				return context;
+			} context:[[NSMutableDictionary alloc] initWithCapacity:samples.count]];
+			self.sections = [self.rows.allKeys sortedArray:NO];
+        }
+
+		NSDictionary<NSString *, UIColor *> *map = @{
+			HKCategoryTypeIdentifierMindfulSession:	[UIColor systemCyanColor],
+			HKCategoryTypeIdentifierSleepAnalysis:	[UIColor systemIndigoColor],
+			HKWorkoutTypeIdentifier:				[UIColor systemMintColor]
+		};
+		for (HKSample *sample in self.cache[HKDataTypeIdentifierHeartbeatSeries]) {
+			for (NSString *identifier in map.allKeys) {
+				// REFACTOR: any
+				for (HKSample *other in self.cache[identifier]) {
+					// REFACTOR: intersect
+					if (([sample.startDate isLaterThanDate:other.startDate] && [sample.startDate isEarlierThanDate:other.endDate]) ||
+						([sample.endDate isLaterThanDate:other.startDate] && [sample.endDate isEarlierThanDate:other.endDate])) {
+						self.color[sample.UUID.UUIDString] = map[identifier];
+
+						break;
+					}
+
+					if (self.color[sample.UUID.UUIDString])
+						break;
+				}
+			}
+		}
 
 		__ui([self.tableView reloadData]);
 	}];
@@ -91,6 +130,8 @@ __lazy(NSMutableDictionary *, rmssd, [[NSMutableDictionary alloc] init])
 			__ui([tableView reloadRowsAtIndexPaths:@[ indexPath ] withRowAnimation:UITableViewRowAnimationAutomatic]);
 		}];
 	}
+
+	cell.textLabel.textColor = self.color[sample.UUID.UUIDString] ?: [UIColor labelColor];
     
     return cell;
 }
