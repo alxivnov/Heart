@@ -230,16 +230,9 @@ __static(HKHealthStore *, defaultStore, [[HKHealthStore alloc] init])
         }];
         
         [self querySamplesWithDescriptors:descriptors limit:limit sort:sort resultsHandler:^(NSArray<__kindof HKSample *> *results, NSError *error) {
-			// REFACTOR: group
-            NSDictionary *groupedResults = [results forEach:^id(__kindof HKSample *sample, NSUInteger index, NSMutableDictionary *context) {
-                NSMutableArray *samples = [context objectForKey:sample.sampleType.identifier];
-                if (samples)
-                    [samples addObject:sample];
-                else
-                    [context setObject:[[NSMutableArray alloc] initWithObjects:sample, Nil] forKey:sample.sampleType.identifier];
-                
-                return context;
-            } context:[[NSMutableDictionary alloc] initWithCapacity:sampleTypesAdded.count]];
+			NSDictionary *groupedResults = [results group:^id(__kindof HKSample *sample) {
+				return sample.sampleType.identifier;
+			}];
             
             if (resultsHandler)
                 resultsHandler(groupedResults, error);

@@ -28,7 +28,10 @@
 - (id)forEach:(id (^)(Type value, NSUInteger index, id context))callback
 	  context:(id)context;
 
+- (BOOL)all:(BOOL (^)(Type value))callback;
+- (BOOL)any:(BOOL (^)(Type value))callback;
 - (NSMutableArray *)map:(id (^)(Type value))callback;
+- (NSMutableDictionary<id, NSMutableArray<Type> *> *)group:(id (^)(Type value))callback;
 
 @end
 

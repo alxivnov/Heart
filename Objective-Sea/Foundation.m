@@ -41,6 +41,22 @@
 	return context;
 }
 
+- (BOOL)any:(BOOL (^)(id))callback {
+	for (id value in self)
+		if (!callback || callback(value))
+			return YES;
+
+	return NO;
+}
+
+- (BOOL)all:(BOOL (^)(id))callback {
+	for (id value in self)
+		if (callback && !callback(value))
+			return NO;
+
+	return YES;
+}
+
 - (NSMutableArray *)map:(id (^)(id))callback {
 	return [self forEach:^id(id value, NSUInteger index, NSMutableArray *context) {
 		id object = callback ? callback(value) : Nil;
@@ -50,6 +66,22 @@
 
 		return context;
 	} context:[[NSMutableArray alloc] initWithCapacity:self.count]];
+}
+
+- (NSMutableDictionary *)group:(id (^)(id))callback {
+	return [self forEach:^id(id value, NSUInteger index, NSMutableDictionary *dic) {
+		id key = callback ? callback(value) : Nil;
+
+		if (key) {
+			NSMutableArray *arr = [dic objectForKey:key];
+			if (arr)
+				[arr addObject:value];
+			else
+				[dic setObject:[[NSMutableArray alloc] initWithObjects:value, Nil] forKey:key];
+		}
+
+		return dic;
+	} context:[[NSMutableDictionary alloc] initWithCapacity:self.count]];
 }
 
 @end

@@ -53,18 +53,9 @@ __lazy(NSMutableDictionary *, rmssd, [[NSMutableDictionary alloc] init])
 			if (identifier != HKDataTypeIdentifierHeartbeatSeries)
 				continue;
 
-			// REFACTOR: group
-			self.rows = [samples forEach:^id(__kindof HKSample *value, NSUInteger index, NSMutableDictionary *context) {
-				NSDate *key = [value.endDate dateComponent];
-
-				NSMutableArray *arr = context[key];
-				if (arr)
-					[arr addObject:value];
-				else
-					context[key] = [[NSMutableArray alloc] initWithObjects:value, Nil];
-
-				return context;
-			} context:[[NSMutableDictionary alloc] initWithCapacity:samples.count]];
+			self.rows = [samples group:^id(HKSample *sample) {
+				return [sample.endDate dateComponent];
+			}];
 			self.sections = [self.rows.allKeys sortedArray:NO];
         }
 
@@ -73,23 +64,14 @@ __lazy(NSMutableDictionary *, rmssd, [[NSMutableDictionary alloc] init])
 			HKCategoryTypeIdentifierSleepAnalysis:	[UIColor systemIndigoColor],
 			HKWorkoutTypeIdentifier:				[UIColor systemMintColor]
 		};
-		for (HKSample *sample in self.cache[HKDataTypeIdentifierHeartbeatSeries]) {
-			for (NSString *identifier in map.allKeys) {
-				// REFACTOR: any
-				for (HKSample *other in self.cache[identifier]) {
-					// REFACTOR: intersect
-					if (([sample.startDate isLaterThanDate:other.startDate] && [sample.startDate isEarlierThanDate:other.endDate]) ||
-						([sample.endDate isLaterThanDate:other.startDate] && [sample.endDate isEarlierThanDate:other.endDate])) {
-						self.color[sample.UUID.UUIDString] = map[identifier];
-
-						break;
-					}
-
-					if (self.color[sample.UUID.UUIDString])
-						break;
-				}
-			}
-		}
+		for (HKSample *sample in self.cache[HKDataTypeIdentifierHeartbeatSeries])
+			for (NSString *identifier in map.allKeys)
+				if ([self.cache[identifier] any:^BOOL(HKSample *other) {
+					BOOL isEarlier = [sample.startDate isEarlierThanDate:other.startDate] && [sample.endDate isEarlierThanDate:other.startDate];
+					BOOL isLater = [sample.startDate isLaterThanDate:other.endDate] && [sample.endDate isLaterThanDate:other.endDate];
+					return !(isEarlier || isLater);
+				}])
+					self.color[sample.UUID.UUIDString] = map[identifier];
 
 		__ui([self.tableView reloadData]);
 	}];
