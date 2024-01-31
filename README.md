@@ -1,2 +1,3 @@
 # Heart
-App to present HRV measurements from HealthKit.
+
+iOS app for viewing HRV measured during mindfulness sessions
