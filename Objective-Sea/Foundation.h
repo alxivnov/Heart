@@ -31,6 +31,7 @@
 - (BOOL)all:(BOOL (^)(Type value))callback;
 - (BOOL)any:(BOOL (^)(Type value))callback;
 - (NSMutableArray *)map:(id (^)(Type value))callback;
+- (NSMutableArray *)flatMap:(NSArray *(^)(Type value))callback;
 - (NSMutableDictionary<id, NSMutableArray<Type> *> *)group:(id (^)(Type value))callback;
 
 @end

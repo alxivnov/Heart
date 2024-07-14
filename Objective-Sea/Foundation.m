@@ -59,10 +59,21 @@
 
 - (NSMutableArray *)map:(id (^)(id))callback {
 	return [self forEach:^id(id value, NSUInteger index, NSMutableArray *context) {
-		id object = callback ? callback(value) : Nil;
+		id object = callback ? callback(value) : value;
 
 		if (object)
 			[context addObject:object];
+
+		return context;
+	} context:[[NSMutableArray alloc] initWithCapacity:self.count]];
+}
+
+- (NSMutableArray *)flatMap:(NSArray *(^)(id))callback {
+	return [self forEach:^id(id value, NSUInteger index, NSMutableArray *context) {
+		id object = callback ? callback(value) : value;
+
+		if (object)
+			[context addObjectsFromArray:object];
 
 		return context;
 	} context:[[NSMutableArray alloc] initWithCapacity:self.count]];

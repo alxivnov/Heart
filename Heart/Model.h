@@ -17,5 +17,6 @@
 + (instancetype)instance;
 
 - (void)observe:(void (^)(NSDictionary<NSString *, NSArray<__kindof HKSample *> *> *results))callback;
+- (void)delete:(HKSample *)sample completion:(void(^)(BOOL success))completion;
 
 @end

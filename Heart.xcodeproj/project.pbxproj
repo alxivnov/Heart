@@ -350,11 +350,12 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = Heart/Heart.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 3.1.28;
+				CURRENT_PROJECT_VERSION = 3.1.1075;
 				DEVELOPMENT_TEAM = VRBB8HL9RV;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = Heart/Info.plist;
 				INFOPLIST_KEY_NSHealthShareUsageDescription = "App needs to read your health data to display HRV.";
+				INFOPLIST_KEY_NSHealthUpdateUsageDescription = "App needs a write access to your HRV data for deletion function to work.";
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchStoryboardName = LaunchScreen;
 				INFOPLIST_KEY_UIMainStoryboardFile = Main;
@@ -364,7 +365,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 0.2.1;
+				MARKETING_VERSION = 0.3;
 				PRODUCT_BUNDLE_IDENTIFIER = com.alxivnov.heart;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
@@ -379,11 +380,12 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = Heart/Heart.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 3.1.28;
+				CURRENT_PROJECT_VERSION = 3.1.1075;
 				DEVELOPMENT_TEAM = VRBB8HL9RV;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = Heart/Info.plist;
 				INFOPLIST_KEY_NSHealthShareUsageDescription = "App needs to read your health data to display HRV.";
+				INFOPLIST_KEY_NSHealthUpdateUsageDescription = "App needs a write access to your HRV data for deletion function to work.";
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchStoryboardName = LaunchScreen;
 				INFOPLIST_KEY_UIMainStoryboardFile = Main;
@@ -393,7 +395,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 0.2.1;
+				MARKETING_VERSION = 0.3;
 				PRODUCT_BUNDLE_IDENTIFIER = com.alxivnov.heart;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;

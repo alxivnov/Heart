@@ -13,7 +13,8 @@
 @property (strong, nonatomic) NSArray<NSDate *> *sections;
 @property (strong, nonatomic) NSDictionary<NSDate *, NSArray<HKHeartbeatSeriesSample *> *> *rows;
 
-@property (strong, nonatomic, readonly) NSDateIntervalFormatter *formatter;
+@property (strong, nonatomic, readonly) NSDateIntervalFormatter *intervalFormatter;
+@property (strong, nonatomic, readonly) NSDateComponentsFormatter *durationFormatter;
 
 @property (strong, nonatomic, readonly) NSMutableDictionary<NSString *, NSArray *> *cache;
 @property (strong, nonatomic, readonly) NSMutableDictionary<NSString *, UIColor *> *color;
@@ -22,16 +23,25 @@
 
 @implementation ListController
 
-__lazy(NSDateIntervalFormatter *, formatter,
+__lazy(NSDateIntervalFormatter *, intervalFormatter,
 	NSDateIntervalFormatter * formatter = [[NSDateIntervalFormatter alloc] init];
 	formatter.dateStyle = NSDateIntervalFormatterNoStyle;
 	formatter.timeStyle = NSDateIntervalFormatterShortStyle;
+	formatter
+)
+__lazy(NSDateComponentsFormatter *, durationFormatter,
+	NSDateComponentsFormatter * formatter = [[NSDateComponentsFormatter alloc] init];
+	formatter.unitsStyle = NSDateComponentsFormatterUnitsStyleAbbreviated;
+	formatter.allowedUnits = NSCalendarUnitHour | NSCalendarUnitMinute;
 	formatter
 )
 
 __lazy(NSMutableDictionary *, cache, [[NSMutableDictionary alloc] init])
 __lazy(NSMutableDictionary *, color, [[NSMutableDictionary alloc] init])
 __lazy(NSMutableDictionary *, rmssd, [[NSMutableDictionary alloc] init])
+
+// Refactor
+// Why image does not tint
 
 - (void)viewDidLoad {
     [super viewDidLoad];
@@ -44,26 +54,22 @@ __lazy(NSMutableDictionary *, rmssd, [[NSMutableDictionary alloc] init])
 
 	[MODEL observe:^(NSDictionary<NSString *,NSArray<__kindof HKSample *> *> *results) {
         for (NSString *identifier in results.allKeys) {
+			if (identifier == HKQuantityTypeIdentifierHeartRateVariabilitySDNN)
+				continue;
+
 			NSArray *samples = [results objectForKey:identifier];
 			if (!samples)
 				continue;
 
 			[self.cache setObject:samples forKey:identifier];
-
-			if (identifier != HKDataTypeIdentifierHeartbeatSeries)
-				continue;
-
-			self.rows = [samples group:^id(HKSample *sample) {
-				return [sample.endDate dateComponent];
-			}];
-			self.sections = [self.rows.allKeys sortedArray:NO];
         }
 
 		NSDictionary<NSString *, UIColor *> *map = @{
-			HKCategoryTypeIdentifierMindfulSession:	[UIColor systemCyanColor],
+			HKCategoryTypeIdentifierMindfulSession:	[UIColor systemMintColor],
 			HKCategoryTypeIdentifierSleepAnalysis:	[UIColor systemIndigoColor],
-			HKWorkoutTypeIdentifier:				[UIColor systemMintColor]
+			HKWorkoutTypeIdentifier:				[UIColor systemGreenColor]
 		};
+
 		for (HKSample *sample in self.cache[HKDataTypeIdentifierHeartbeatSeries])
 			for (NSString *identifier in map.allKeys)
 				if ([self.cache[identifier] any:^BOOL(HKSample *other) {
@@ -72,6 +78,37 @@ __lazy(NSMutableDictionary *, rmssd, [[NSMutableDictionary alloc] init])
 					return !(isEarlier || isLater);
 				}])
 					self.color[sample.UUID.UUIDString] = map[identifier];
+
+		NSArray *samples = [[self.cache.allKeys flatMap:^NSArray *(NSString *identifier) {
+			NSArray *samples = self.cache[identifier];
+//			if (identifier == HKDataTypeIdentifierHeartbeatSeries)
+//				return [samples map:^id(HKSample *sample) {
+//					return [map.allKeys any:^BOOL(NSString *key) {
+//						return [self.cache[key] any:^BOOL(HKSample *other) {
+//							BOOL isEarlier = [sample.startDate isEarlierThanDate:other.startDate] && [sample.endDate isEarlierThanDate:other.startDate];
+//							BOOL isLater = [sample.startDate isLaterThanDate:other.endDate] && [sample.endDate isLaterThanDate:other.endDate];
+//								return !(isEarlier || isLater);
+//						 }];
+//					}] ? Nil : sample;
+//				}];
+
+			if (identifier == HKCategoryTypeIdentifierSleepAnalysis)
+				return [samples map:^id(HKCategorySample *sample) {
+					return sample.value == HKCategoryValueSleepAnalysisAsleep ? sample : Nil;
+				}];
+
+//			if (identifier == HKCategoryTypeIdentifierMindfulSession)
+//				return @[];
+
+			return samples;
+		}] sortedArrayUsingComparator:^NSComparisonResult(HKSample *obj1, HKSample *obj2) {
+			return [obj2.endDate compare:obj1.endDate];
+		}];
+
+		self.rows = [samples group:^id(HKSample *sample) {
+			return [sample.endDate dateComponent];
+		}];
+		self.sections = [self.rows.allKeys sortedArray:NO];
 
 		__ui([self.tableView reloadData]);
 	}];
@@ -92,28 +129,34 @@ __lazy(NSMutableDictionary *, rmssd, [[NSMutableDictionary alloc] init])
 }
 
 - (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath {
-    UITableViewCell *cell = [tableView dequeueReusableCellWithIdentifier:@"HKHeartbeatSeriesSample" forIndexPath:indexPath];
 
     // Configure the cell...
 	HKHeartbeatSeriesSample *sample = self.rows[self.sections[indexPath.section]][indexPath.row];
 
-	cell.textLabel.text = [self.formatter stringFromDate:sample.startDate toDate:sample.endDate];
+	UITableViewCell *cell = [tableView dequeueReusableCellWithIdentifier:sample.sampleType.identifier forIndexPath:indexPath];
 
-	NSString *key = sample.UUID.UUIDString;
-	NSNumber *cache = self.rmssd[key];
-	if (cache) {
-		cell.detailTextLabel.text = [NSString stringWithFormat:@"%.f%%", fmin(100.0,  log(cache.doubleValue) * 20.0)];
+	cell.textLabel.text = [self.intervalFormatter stringFromDate:sample.startDate toDate:sample.endDate];
+
+	if (sample.sampleType.identifier == HKDataTypeIdentifierHeartbeatSeries) {
+		NSString *key = sample.UUID.UUIDString;
+		NSNumber *cache = self.rmssd[key];
+		if (cache) {
+			cell.detailTextLabel.text = [NSString stringWithFormat:@"%.f%%", fmin(100.0,  log(cache.doubleValue) * 20.0)];
+		} else {
+			cell.detailTextLabel.text = @"--%";
+
+			[sample queryRMSSD:^(double rmssd) {
+				self.rmssd[key] = @(rmssd);
+
+				__ui([tableView reloadRowsAtIndexPaths:@[ indexPath ] withRowAnimation:UITableViewRowAnimationAutomatic]);
+			}];
+		}
 	} else {
-		cell.detailTextLabel.text = @"--%";
-
-		[sample queryRMSSD:^(double rmssd) {
-			self.rmssd[key] = @(rmssd);
-
-			__ui([tableView reloadRowsAtIndexPaths:@[ indexPath ] withRowAnimation:UITableViewRowAnimationAutomatic]);
-		}];
+		cell.detailTextLabel.text = [self.durationFormatter stringFromDate:sample.startDate toDate:sample.endDate];
 	}
 
 	cell.textLabel.textColor = self.color[sample.UUID.UUIDString] ?: [UIColor labelColor];
+	cell.imageView.tintColor = self.color[sample.UUID.UUIDString] ?: sample.sampleType.identifier == HKDataTypeIdentifierHeartbeatSeries ? [UIColor systemRedColor] : [UIColor labelColor];
     
     return cell;
 }
@@ -122,16 +165,22 @@ __lazy(NSMutableDictionary *, rmssd, [[NSMutableDictionary alloc] init])
 	[tableView deselectRowAtIndexPath:indexPath animated:YES];
 }
 
-- (void)tableView:(UITableView *)tableView commitEditingStyle:(UITableViewCellEditingStyle)editingStyle forRowAtIndexPath:(NSIndexPath *)indexPath {
-    if (editingStyle == UITableViewCellEditingStyleDelete) {
-        HKHeartbeatSeriesSample *sample = self.rows[self.sections[indexPath.section]][indexPath.row];
-        
-        [[HKHealthStore defaultStore] deleteObject:sample completion:^(BOOL success) {
-            if (success)
-                __ui([tableView deleteRowsAtIndexPaths:@[ indexPath ] withRowAnimation:UITableViewRowAnimationAutomatic]);
-        }];
-    }
-}
+//- (UITableViewCellEditingStyle)tableView:(UITableView *)tableView editingStyleForRowAtIndexPath:(NSIndexPath *)indexPath {
+//	HKHeartbeatSeriesSample *sample = self.rows[self.sections[indexPath.section]][indexPath.row];
+//
+//	return sample.sampleType.identifier == HKDataTypeIdentifierHeartbeatSeries ? UITableViewCellEditingStyleDelete : UITableViewCellEditingStyleNone;
+//}
+//
+//- (void)tableView:(UITableView *)tableView commitEditingStyle:(UITableViewCellEditingStyle)editingStyle forRowAtIndexPath:(NSIndexPath *)indexPath {
+//    if (editingStyle == UITableViewCellEditingStyleDelete) {
+//        HKHeartbeatSeriesSample *sample = self.rows[self.sections[indexPath.section]][indexPath.row];
+//        
+//        [MODEL delete:sample completion:^(BOOL success) {
+//            if (success)
+//                __ui([tableView deleteRowsAtIndexPaths:@[ indexPath ] withRowAnimation:UITableViewRowAnimationAutomatic]);
+//        }];
+//    }
+//}
 
 /*
 // Override to support conditional editing of the table view.
